@@ -5,6 +5,8 @@ using System.IO;
 using Emgu.CV;
 using Emgu.CV.Structure;
 using System;
+using System.Collections.Generic;
+using UnityEngine.Video;
 
 public class peopleRecognition : MonoBehaviour
 {
@@ -28,7 +30,8 @@ public class peopleRecognition : MonoBehaviour
     public Text upper_t;
     public Text upper_n_t;
 
-    public Button bt;
+    public Button bt_cam;
+    public Button bt_vid;
 
     private int frameWidth;
     private int frameHeight;
@@ -39,21 +42,60 @@ public class peopleRecognition : MonoBehaviour
     private CascadeClassifier _cascadeClassifierUpperBody;
 
     private Image<Bgr, byte> currentFrameBgr;
-
+    public VideoPlayer vp;
     public Material mt;
+
+    private List<string> videosList = new List<string>();
 
     void Start()
     {
+        DirectoryInfo dir = new DirectoryInfo(Application.dataPath + "/videos");
+        FileInfo[] info = dir.GetFiles("*.*");
+
+        foreach (FileInfo f in info)
+        {
+            if(!f.FullName.Contains("meta"))
+                videosList.Add(f.FullName);
+        }
+
+
         WebCamDevice[] devices = WebCamTexture.devices;
-        System.Collections.Generic.List<string> list = new System.Collections.Generic.List<string>();
+        List<string> list = new List<string>();
         for (int i = 0; i < devices.Length; i++)
         {
             list.Add(i.ToString());
         }
         drop.AddOptions(list);
 
-        bt.onClick.AddListener(StartFilming);
+        bt_cam.onClick.AddListener(StartFilming);
+        bt_vid.onClick.AddListener(StartVideo);
+    }
 
+    private int videoIterator = 0;
+    private void StartVideo()
+    {
+        if (vp.isPlaying)
+        {
+            vp.Stop();
+            return;
+        }
+
+        vp.url = videosList[videoIterator];
+        vp.Play();
+        vp.loopPointReached += EndOfVideo;
+    }
+
+    private void EndOfVideo(VideoPlayer vp)
+    {
+        videoIterator++;
+        if (videoIterator >= videosList.Count)
+        {
+            videoIterator = 0;
+        }
+        vp.Stop();
+
+        vp.url = videosList[videoIterator];
+        vp.Play();
     }
 
     private void StartFilming()
@@ -77,7 +119,6 @@ public class peopleRecognition : MonoBehaviour
         {
             people_t.text = e.ToString();
         }
-        
     }
 
     private bool started = false;
