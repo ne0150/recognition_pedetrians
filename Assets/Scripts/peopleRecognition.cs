@@ -145,9 +145,10 @@ public class peopleRecognition : MonoBehaviour
         upper_n_t.text = upper_n.value.ToString();
     }
 
+    public Toggle toggleEqualize;
+
     private void faceDetector()
     {
-        
         currentFrameBgr = cvCapture.QueryFrame().ToImage<Bgr, byte>();
 
         Texture2D tex = new Texture2D(640, 480);
@@ -155,6 +156,12 @@ public class peopleRecognition : MonoBehaviour
         if (currentFrameBgr != null)
         {
             Image<Gray, byte> grayFrame = currentFrameBgr.Convert<Gray, byte>();
+
+            if (toggleEqualize.isOn)
+            {
+                currentFrameBgr._EqualizeHist();
+            }
+            
 
             double scale_p = double.Parse(people_t.text);
             if(scale_p < 1.1 || scale_p > 2.0)
@@ -192,24 +199,24 @@ public class peopleRecognition : MonoBehaviour
                 nei_full = 1;
             }
 
-            System.Drawing.Rectangle[] peoples = _cascadeClassifierPeople.DetectMultiScale(grayFrame, scale_p, nei_p, new System.Drawing.Size(frameWidth / 8, frameHeight / 8));
-            System.Drawing.Rectangle[] upperbodys = _cascadeClassifierUpperBody.DetectMultiScale(grayFrame, scale_up, nei_up, new System.Drawing.Size(frameWidth / 8, frameHeight / 8));
-            System.Drawing.Rectangle[] fullbodys = _cascadeClassifierFullBody.DetectMultiScale(grayFrame, scale_full, nei_full, new System.Drawing.Size(frameWidth / 8, frameHeight / 8));
+            //System.Drawing.Rectangle[] peoples = _cascadeClassifierPeople.DetectMultiScale(grayFrame, scale_p, nei_p, new System.Drawing.Size(frameWidth / 8, frameHeight / 8));
+            //System.Drawing.Rectangle[] upperbodys = _cascadeClassifierUpperBody.DetectMultiScale(grayFrame, scale_up, nei_up, new System.Drawing.Size(frameWidth / 8, frameHeight / 8));
+            //System.Drawing.Rectangle[] fullbodys = _cascadeClassifierFullBody.DetectMultiScale(grayFrame, scale_full, nei_full, new System.Drawing.Size(frameWidth / 8, frameHeight / 8));
 
-            foreach (var man in peoples)
-            {
-                currentFrameBgr.Draw(man, new Bgr(0, 255, 0), 3);
-            }
+            //foreach (var man in peoples)
+            //{
+            //    currentFrameBgr.Draw(man, new Bgr(255, 0, 0), 3);
+            //}
 
-            foreach (var body_up in upperbodys)
-            {
-                currentFrameBgr.Draw(body_up, new Bgr(255, 0, 0), 3);
-            }
+            //foreach (var body_up in upperbodys)
+            //{
+            //    currentFrameBgr.Draw(body_up, new Bgr(255, 0, 0), 3);
+            //}
 
-            foreach (var body_full in fullbodys)
-            {
-                currentFrameBgr.Draw(body_full, new Bgr(0, 0, 255), 3);
-            }
+            //foreach (var body_full in fullbodys)
+            //{
+            //    currentFrameBgr.Draw(body_full, new Bgr(255, 0, 0), 3);
+            //}
 
             //Convert this image into Bitmap, the pixel values are copied over to the Bitmap
             currentFrameBgr.ToBitmap();
@@ -220,12 +227,22 @@ public class peopleRecognition : MonoBehaviour
 
             tex.LoadImage(memstream.ToArray());
             mt.mainTexture = tex;
+
+            tex = null;
+            memstream.Close();
+            
+            currentFrameBgr.Dispose();
+            grayFrame.Dispose();
         }
     }
 
     private void OnDestroy()
     {
         //release from memory
+        if (cvCapture == null)
+        {
+            return;
+        }
         cvCapture.Dispose();
         cvCapture.Stop();
 
